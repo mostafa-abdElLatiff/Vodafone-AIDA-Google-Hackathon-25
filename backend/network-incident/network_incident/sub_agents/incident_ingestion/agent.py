@@ -12,21 +12,50 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Academic_newresearch_agent for finding new research lines"""
 
-from google.adk import Agent
+from google.adk.tools import FunctionTool
 from google.adk.agents import LlmAgent
 from google.adk.tools.agent_tool import AgentTool
+from .ingestion import update_incidents_table, convert_data_to_json, generate_and_add_embeddings, ingest_data_into_elasticsearch_index
 from . import prompt
+import pandas as pd 
 
 MODEL = "gemini-2.5-pro"
 
-# academic_newresearch_agent = Agent(
-#     model=MODEL,
-#     name="academic_newresearch_agent",
-#     instruction=prompt.ACADEMIC_NEWRESEARCH_PROMPT,
-# )
-# from google.adk import LlmAgent, AgentTool
+
+class IngestIncidentTool:
+    """
+    A custom tool that encapsulates the entire data ingestion pipeline.
+    """
+    name = "ingest_incident_data"
+    description = "Transforms incident data, updates BigQuery, generates embeddings, and indexes into Elasticsearch."
+
+    def __call__(self, df: pd.DataFrame) -> str:
+        """
+        The main callable method for the tool.
+        """
+        try:
+            print("Starting ingestion process...")
+            # Step 1: Convert and enrich data
+            json_data = convert_data_to_json(df)
+
+            # Step 2: Update BigQuery
+            update_incidents_table(json_data)
+
+            # Step 3: Generate embeddings
+            enriched_data = generate_and_add_embeddings(json_data)
+
+            # Step 4: Index into Elasticsearch
+            ingest_data_into_elasticsearch_index(enriched_data)
+
+            return f"Ingestion complete: {len(enriched_data)} records processed."
+
+        except Exception as e:
+            logging.error(f"Ingestion failed: {e}")
+            return f"Ingestion failed: {e}"
+
+# Instantiate the custom tool class and pass the instance directly to FunctionTool.
+ingest_tool = FunctionTool(IngestIncidentTool())
 
 incident_ingestion_agent = LlmAgent(
     name="incident_ingestion_agent",
@@ -36,5 +65,6 @@ incident_ingestion_agent = LlmAgent(
         "and stores them in a vector database along with relevant metadata. It is used to build a searchable knowledge base of past incidents."
     ),
     instruction=prompt.INCIDENT_INGESTION_PROMPT,
+    tools=[ingest_tool],
     output_key="ingestion_status"
 )
