@@ -1,5 +1,6 @@
 import base64
 import streamlit as st
+import pandas as pd
 from typing import List, Dict
 from inference_client import InferenceClient
 
@@ -45,7 +46,7 @@ def rag_backend(inference_client,
     
     return response['answer'], response['reference']
 
-    
+
 def main():
 
     # Load favicon file (app logo image)
@@ -88,7 +89,34 @@ def main():
     for message in st.session_state.styled_messages:
         with st.chat_message(message['role']):
             st.markdown(message['content'], unsafe_allow_html=True)
+
+    # Add Sidebar for uploading the data
+    with st.sidebar:
+        st.header("Upload Data")
+        uploaded_file = st.file_uploader("Choose a CSV or Excel file", type=["csv", "xlsx"])
+    
+        # Check if a file has been uploaded
+        if uploaded_file is not None:
+        try:
+            # Determine the file type and read it with pandas
+            if uploaded_file.name.endswith('.csv'):
+                df = pd.read_csv(uploaded_file)
+            elif uploaded_file.name.endswith('.xlsx'):
+                df = pd.read_excel(uploaded_file)
             
+            # Display a success message and the first few rows of the data
+            st.sidebar.success("File uploaded successfully!")
+            st.sidebar.subheader("Uploaded Data Preview:")
+            st.sidebar.dataframe(df.head())
+        
+            # Now you can use the DataFrame 'df' for further processing
+            # For example, you can convert the DataFrame to a string
+            # and pass it to your RAG backend
+            uploaded_data_str = df.to_string()
+            st.session_state.uploaded_data = uploaded_data_str
+    
+        except Exception as e:
+            st.sidebar.error(f"Error reading the file: {e}")
     
     # Chat input
     if prompt := st.chat_input("Enter your query"):
