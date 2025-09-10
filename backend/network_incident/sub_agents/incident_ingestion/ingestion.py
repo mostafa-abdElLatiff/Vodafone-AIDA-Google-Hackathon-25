@@ -2,7 +2,28 @@ import logging
 import json
 from google.cloud import bigquery
 import pandas as pd
-from configs.config import DATA_FIELDS, FIELDS_TO_EMBED, EMBEDDINGS_MODEL_NAME, ES_INDEX_NAME
+from elasticsearch import Elasticsearch, helpers
+from tqdm import tqdm
+from langchain_google_vertexai import VertexAIEmbeddings
+from configs.config import (
+    DATA_FIELDS, 
+    FIELDS_TO_EMBED, 
+    EMBEDDINGS_MODEL_NAME, 
+    ES_INDEX_NAME,
+    ELASTICSEARCH_HOST,
+    ELASTICSEARCH_USERNAME,
+    ELASTICSEARCH_PASSWORD,
+    DATASET_ID,
+    TABLE_ID,
+    GCP_PROJECT_ID,
+    GCP_LOCATION
+)
+
+# Initialize Elasticsearch client
+client = Elasticsearch(
+    hosts=[ELASTICSEARCH_HOST],
+    basic_auth=(ELASTICSEARCH_USERNAME, ELASTICSEARCH_PASSWORD)
+)
 
 # def validate_data_before_ingestion(data):
 
@@ -71,7 +92,7 @@ def update_incidents_table(incoming_data):
 
 def convert_data_to_json(data):
     # Make a copy to avoid modifying the original DataFrame
-    df_prepared = df.copy()
+    df_prepared = data.copy()
 
     # Convert 'timestamp' column to datetime
     df_prepared['timestamp'] = pd.to_datetime(df_prepared['timestamp'])
@@ -115,7 +136,11 @@ def generate_and_add_embeddings(json_data):
     """
     try:
         # Initialize the Vertex AI embedding model
-        embeddings_model = VertexAIEmbeddings(model_name=EMBEDDINGS_MODEL_NAME)
+        embeddings_model = VertexAIEmbeddings(
+            model_name=EMBEDDINGS_MODEL_NAME,
+            project=GCP_PROJECT_ID,
+            location=GCP_LOCATION
+        )
         
         for record in json_data:
             for field in FIELDS_TO_EMBED:

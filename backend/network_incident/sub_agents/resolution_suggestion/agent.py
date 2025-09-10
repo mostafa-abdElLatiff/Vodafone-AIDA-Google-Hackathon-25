@@ -12,26 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Academic_websearch_agent for finding research papers using search tools."""
+"""Resolution suggestion agent for network incident resolution."""
 
-from google.adk import Agent
-from google.adk.tools import google_search
 from google.adk.agents import LlmAgent
-from google.adk.tools.agent_tool import AgentTool
 from . import prompt
+from .retrieval_tool import incident_retrieval_tool
 
 MODEL = "gemini-2.5-pro"
-
-
-# academic_websearch_agent = Agent(
-#     model=MODEL,
-#     name="academic_websearch_agent",
-#     instruction=prompt.ACADEMIC_WEBSEARCH_PROMPT,
-#     output_key="recent_citing_papers",
-#     tools=[google_search],
-# )
-# from adk import LlmAgent, AgentTool
-# import prompt  # assuming prompt.py is in the same directory
 
 resolution_suggestion_agent = LlmAgent(
     name="resolution_suggestion_agent",
@@ -42,5 +29,6 @@ resolution_suggestion_agent = LlmAgent(
         "and suggests recommended resolution steps."
     ),
     instruction=prompt.RESOLUTION_SUGGESTION_PROMPT,
+    tools=[incident_retrieval_tool],
     output_key="resolution_summary"
 )

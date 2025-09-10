@@ -1,0 +1,25 @@
+# Core dependencies
+fastapi==0.104.1
+uvicorn==0.24.0
+pydantic==2.5.0
+
+# Data processing
+pandas==2.1.4
+openpyxl==3.1.2
+
+# Elasticsearch
+elasticsearch==8.11.0
+
+# LangChain and Google AI
+langchain==0.1.0
+langchain-google-vertexai==1.0.0
+langchain-core==0.1.0
+
+# Google Cloud
+google-cloud-bigquery==3.13.0
+
+# Progress bars
+tqdm==4.66.1
+
+# Logging
+python-multipart==0.0.6
