@@ -1,7 +1,4 @@
-import random
-import time
 import base64
-import html2text
 import streamlit as st
 from typing import List, Dict
 from inference_client import InferenceClient
@@ -33,7 +30,8 @@ def rag_backend(inference_client,
     
     # We perform a try/catch block in case we get an error from the RAI 
     try:
-        response = inference_client.predict(query, messages, counter)
+        print("query is: ",query)
+        response = inference_client.predict(query)
     
     except ValueError as e:
         error = str(e).split('scanner: ')[1].split('with')[0].strip()
@@ -51,12 +49,12 @@ def rag_backend(inference_client,
 def main():
 
     # Load favicon file (app logo image)
-    img_path = "inference_workflow/vodafone.png"
-    img = get_base64("inference_workflow/vodafone.png") 
+    img_path = "./vodafone.png"
+    img = get_base64("./vodafone.png")
 
     # Set the title of the Streamlit app
-    title = "Internal Audit Handbook Chatbot"
-    description = "This is Vodafone's internal audit chat assisstant. It can help you answer your questions regarding Vodafone's internal audit core activities."
+    title = "Network Incident Resolution Assistant-team 5"
+    description = "AI-powered assistant to help network engineers resolve incidents faster by retrieving similar past incidents and suggesting probable resolutions."
     
     # Set the page configuration
     st.set_page_config(
