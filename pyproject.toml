@@ -6,6 +6,13 @@ authors = [{ name = "Antonio Gulli", email = "gulli@google.com" }]
 license = "Apache License 2.0"
 readme = "README.md"
 
+[tool.poetry]
+packages = [
+    {include = "./configs"},
+    {include = "./backend"}
+]
+
+
 [tool.poetry.dependencies]
 python = "^3.10"
 google-adk = "^1.0.0"
@@ -15,6 +22,10 @@ python-dotenv = "^1.0.1"
 google-cloud-aiplatform = "^1.93"
 pandas = "^2.2.3"
 ipykernel = "^6.30.1"
+elasticsearch = "^9.1.0"
+tqdm = "^4.67.1"
+langchain-google-vertexai = "^2.0.28"
+# configs = { path = "./configs", develop = true }
 
 [tool.poetry.group.dev]
 optional = true
@@ -31,6 +42,9 @@ optional = true
 
 [tool.poetry.group.deployment.dependencies]
 absl-py = "^2.2.1"
+
+# [[tool.poetry.packages]]
+# include = "configs"
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

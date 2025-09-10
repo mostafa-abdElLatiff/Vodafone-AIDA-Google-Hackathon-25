@@ -3,7 +3,7 @@ Retrieval tool for resolution suggestion agent.
 """
 
 from google.adk.tools import FunctionTool
-from ..retrieval import get_search_context
+from backend.network_incident.retrieval import get_search_context
 from configs.config import KEYWORD_FIELDS_TO_SEARCH, VECTOR_FIELDS_TO_SEARCH
 import logging
 

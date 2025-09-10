@@ -19,14 +19,14 @@ from configs.config import (
     INDEX_NAME,
     GCP_PROJECT_ID,
     GCP_LOCATION,
-    EMBEDDING_MODEL_NAME,
+    EMBEDDINGS_MODEL_NAME,
     KEYWORD_FIELDS_TO_SEARCH,
     VECTOR_FIELDS_TO_SEARCH
 )
 
 # Initialize embeddings model
 embeddings_model = VertexAIEmbeddings(
-    model_name=EMBEDDING_MODEL_NAME,
+    model_name=EMBEDDINGS_MODEL_NAME,
     project=GCP_PROJECT_ID,
     location=GCP_LOCATION
 )
