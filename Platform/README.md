@@ -1,0 +1,1 @@
+This meant to be used for any platform related codebase (CICD, IaaC, etc)
