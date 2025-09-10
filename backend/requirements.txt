@@ -1,25 +1,21 @@
-# Core dependencies
-fastapi==0.104.1
-uvicorn==0.24.0
-pydantic==2.5.0
+# Core ADK and AI Platform dependencies
+google-adk>=1.0.0
+google-genai>=1.9.0
+google-cloud-aiplatform>=1.93.0
+google-cloud-bigquery>=3.11.0
 
 # Data processing
-pandas==2.1.4
-openpyxl==3.1.2
+pandas>=2.2.3
+numpy>=1.24.0
 
-# Elasticsearch
-elasticsearch==8.11.0
+# Search and embeddings
+elasticsearch>=9.1.0
+langchain-google-vertexai>=2.0.28
 
-# LangChain and Google AI
-langchain==0.1.0
-langchain-google-vertexai==1.0.0
-langchain-core==0.1.0
+# Utilities
+tqdm>=4.67.1
+pydantic>=2.10.6
+python-dotenv>=1.0.1
 
-# Google Cloud
-google-cloud-bigquery==3.13.0
-
-# Progress bars
-tqdm==4.66.1
-
-# Logging
-python-multipart==0.0.6
+# Development and deployment
+absl-py>=2.2.1

@@ -33,7 +33,7 @@ def ingest_incident_data(df: pd.DataFrame) -> str:
         df (pd.DataFrame): The incident data DataFrame.
         
     Returns:
-        str: Status message.
+        str: Detailed status message with counts.
     """
     try:
         logging.info("Starting ingestion process...")
@@ -42,23 +42,42 @@ def ingest_incident_data(df: pd.DataFrame) -> str:
         if not validate_dataframe(df):
             return "Error: Invalid data format. Please ensure the file contains all required columns and valid data."
         
+        total_records = len(df)
+        logging.info(f"Processing {total_records} incident records...")
+        
         # Step 1: Convert and enrich data
         json_data = convert_data_to_json(df)
 
-        # Step 2: Update BigQuery
-        update_incidents_table(json_data)
+        # Step 2: Update BigQuery and get counts
+        new_count, updated_count = update_incidents_table(json_data)
 
         # Step 3: Generate embeddings
         enriched_data = generate_and_add_embeddings(json_data)
 
         # Step 4: Index into Elasticsearch
-        ingest_data_into_elasticsearch_index(enriched_data)
+        es_success, es_failed = ingest_data_into_elasticsearch_index(enriched_data)
 
-        return f"Ingestion complete: {len(enriched_data)} records processed."
+        # Prepare detailed status message
+        status_message = (
+            f"✅ Data ingestion completed successfully!\n\n"
+            f"📊 **Summary:**\n"
+            f"• Total records processed: {total_records}\n"
+            f"• New incidents added: {new_count}\n"
+            f"• Existing incidents updated: {updated_count}\n"
+            f"• Elasticsearch documents indexed: {es_success}\n"
+            f"• Elasticsearch failures: {es_failed}\n\n"
+            f"🔍 **Database Updates:**\n"
+            f"• BigQuery table updated with {new_count} new and {updated_count} updated records\n"
+            f"• Elasticsearch index updated with {es_success} documents\n\n"
+            f"✨ All data has been successfully ingested and is now available for search and resolution suggestions."
+        )
+
+        logging.info(f"Ingestion completed: {new_count} new, {updated_count} updated, {es_success} indexed")
+        return status_message
 
     except Exception as e:
         logging.error(f"Ingestion failed: {e}")
-        return f"Ingestion failed: {e}"
+        return f"❌ Ingestion failed: {str(e)}"
 
 def process_uploaded_file(file_content: bytes, filename: str) -> str:
     """

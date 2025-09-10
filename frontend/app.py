@@ -2,7 +2,7 @@ import base64
 import streamlit as st
 import pandas as pd
 from typing import List, Dict
-from inference_client import InferenceClient
+from agent_client import LocalAgentClient
 
 
 def get_base64(bin_file):
@@ -19,32 +19,26 @@ def add_message(role, content, message_type):
         st.session_state.styled_messages.append({'role': role, 'content': content})
 
 
-def rag_backend(inference_client,
+def rag_backend(agent_client,
                 query: str,
                 messages: List,
                 counter: int,
+                uploaded_data: str = None
                ):
-    """Send the query to the inference client and get the LLM response"""
+    """Send the query to the agent client and get the response"""
     number_of_qa_to_preserve = (5 * 2) + 1
     if len(messages) > number_of_qa_to_preserve:
         messages = messages[-number_of_qa_to_preserve:]
     
-    # We perform a try/catch block in case we get an error from the RAI 
     try:
-        print("query is: ",query)
-        response = inference_client.predict(query)
-    
-    except ValueError as e:
-        error = str(e).split('scanner: ')[1].split('with')[0].strip()
+        print("Query is:", query)
+        response = agent_client.predict(query, uploaded_data)
         
-        response = f'Query rejected by the Responsible AI Service for {error}'
-        return response, 'No Reference'
+        return response['answer'], response['reference']
     
-    except:
-        response = 'Query rejected by the Responsible AI Service'
-        return response, 'No Reference'
-    
-    return response['answer'], response['reference']
+    except Exception as e:
+        error_msg = f"Error processing query: {str(e)}"
+        return error_msg, 'Processing Error'
 
 
 def main():
@@ -70,9 +64,9 @@ def main():
     st.title(title)
     st.info(description, icon=":material/description:")
         
-    # Create an instance of the InferenceClient for each session
-    if "inference_client" not in st.session_state:
-        st.session_state.inference_client = InferenceClient()
+    # Create an instance of the AgentClient for each session
+    if "agent_client" not in st.session_state:
+        st.session_state.agent_client = LocalAgentClient()
         
     # Initialize chat history if not already present
     if "messages" not in st.session_state:
@@ -94,6 +88,9 @@ def main():
     with st.sidebar:
         st.header("Upload Data")
         uploaded_file = st.file_uploader("Choose a CSV or Excel file", type=["csv", "xlsx"])
+        
+        # Add instructions for ingestion
+        st.info("💡 **To ingest data:** Upload a file and then type 'ingest this data' in the chat")
     
         # Check if a file has been uploaded
         if uploaded_file is not None:
@@ -133,7 +130,8 @@ def main():
 
         
         # Generate AI response
-        response = rag_backend(st.session_state.inference_client, prompt, st.session_state.messages, st.session_state.counter)
+        uploaded_data = st.session_state.get('uploaded_data', None)
+        response = rag_backend(st.session_state.agent_client, prompt, st.session_state.messages, st.session_state.counter, uploaded_data)
         answer = response[0]
         reference = response[1] 
 

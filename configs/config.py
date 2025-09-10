@@ -22,5 +22,5 @@ GCP_PROJECT_ID = "vodaf-aida25lcpm-205"
 GCP_LOCATION = "europe-west1"
 
 # BigQuery
-DATASET_ID = 'aida_hackathon-team5'
-TABLE_ID = 'network-incidents'
+DATASET_ID = 'aida_hackathon_team_5'
+TABLE_ID = 'network_incidents'

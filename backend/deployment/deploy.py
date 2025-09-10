@@ -12,14 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Deployment script for Academic Research"""
+"""Deployment script for Network Incident Resolution Agent"""
 
 
 import os
 
 import vertexai
 from absl import app, flags
-from academic_research.agent import root_agent
+from network_incident.agent import root_agent
 from dotenv import load_dotenv
 from vertexai import agent_engines
 from vertexai.preview.reasoning_engines import AdkApp
@@ -37,7 +37,7 @@ flags.mark_bool_flags_as_mutual_exclusive(["create", "delete"])
 
 
 def create() -> None:
-    """Creates an agent engine for Academic Research."""
+    """Creates an agent engine for Network Incident Resolution."""
     adk_app = AdkApp(agent=root_agent, enable_tracing=True)
 
     remote_agent = agent_engines.create(
@@ -49,8 +49,16 @@ def create() -> None:
             "google-genai (>=1.5.0,<2.0.0)",
             "pydantic (>=2.10.6,<3.0.0)",
             "absl-py (>=2.2.1,<3.0.0)",
+            "pandas (>=2.2.3)",
+            "elasticsearch (>=9.1.0)",
+            "tqdm (>=4.67.1)",
+            "langchain-google-vertexai (>=2.0.28)",
+            "google-cloud-bigquery (>=3.11.0)",
         ],
-        #        extra_packages=[""],
+        extra_packages=[
+            "configs",
+            "backend"
+        ],
     )
     print(f"Created remote agent: {remote_agent.resource_name}")
 
