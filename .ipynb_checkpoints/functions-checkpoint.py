@@ -2,7 +2,7 @@ import logging
 import json
 from google.cloud import bigquery
 import pandas as pd
-from .configs import DATA_FIELDS, FIELDS_TO_EMBED, EMBEDDINGS_MODEL_NAME, ES_INDEX_NAME
+from config.configs import DATA_FIELDS, FIELDS_TO_EMBED, EMBEDDINGS_MODEL_NAME, ES_INDEX_NAME
 
 # def validate_data_before_ingestion(data):
 
@@ -115,7 +115,7 @@ def generate_and_add_embeddings(json_data):
     """
     try:
         # Initialize the Vertex AI embedding model
-        embeddings_model = VertexAIEmbeddings(model_name=EMBEDDINGS_MODEL_NAME)
+        embeddings_model = VertexAIEmbeddings(model_name=)
         
         for record in json_data:
             for field in FIELDS_TO_EMBED:
@@ -155,4 +155,10 @@ def ingest_data_into_elasticsearch_index(json_data):
                 logging.info(item)
     except Exception as e:
         logging.info(f"An error occurred: {e}")
+
+
+
+
+
+
     
