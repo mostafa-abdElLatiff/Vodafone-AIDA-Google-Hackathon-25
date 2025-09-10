@@ -97,26 +97,26 @@ def main():
     
         # Check if a file has been uploaded
         if uploaded_file is not None:
-        try:
-            # Determine the file type and read it with pandas
-            if uploaded_file.name.endswith('.csv'):
-                df = pd.read_csv(uploaded_file)
-            elif uploaded_file.name.endswith('.xlsx'):
-                df = pd.read_excel(uploaded_file)
+            try:
+                # Determine the file type and read it with pandas
+                if uploaded_file.name.endswith('.csv'):
+                    df = pd.read_csv(uploaded_file)
+                elif uploaded_file.name.endswith('.xlsx'):
+                    df = pd.read_excel(uploaded_file)
+                
+                # Display a success message and the first few rows of the data
+                st.sidebar.success("File uploaded successfully!")
+                st.sidebar.subheader("Uploaded Data Preview:")
+                st.sidebar.dataframe(df.head())
             
-            # Display a success message and the first few rows of the data
-            st.sidebar.success("File uploaded successfully!")
-            st.sidebar.subheader("Uploaded Data Preview:")
-            st.sidebar.dataframe(df.head())
+                # Now you can use the DataFrame 'df' for further processing
+                # For example, you can convert the DataFrame to a string
+                # and pass it to your RAG backend
+                uploaded_data_str = df.to_string()
+                st.session_state.uploaded_data = uploaded_data_str
         
-            # Now you can use the DataFrame 'df' for further processing
-            # For example, you can convert the DataFrame to a string
-            # and pass it to your RAG backend
-            uploaded_data_str = df.to_string()
-            st.session_state.uploaded_data = uploaded_data_str
-    
-        except Exception as e:
-            st.sidebar.error(f"Error reading the file: {e}")
+            except Exception as e:
+                st.sidebar.error(f"Error reading the file: {e}")
     
     # Chat input
     if prompt := st.chat_input("Enter your query"):
