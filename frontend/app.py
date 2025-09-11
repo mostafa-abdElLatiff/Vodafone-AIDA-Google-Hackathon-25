@@ -44,8 +44,8 @@ def rag_backend(agent_client,
 def main():
 
     # Load favicon file (app logo image)
-    img_path = "./vodafone.png"
-    img = get_base64("./vodafone.png")
+    img_path = "frontend/vodafone.png"
+    img = get_base64(img_path)
 
     # Set the title of the Streamlit app
     title = "Network Incident Resolution Assistant-team 5"

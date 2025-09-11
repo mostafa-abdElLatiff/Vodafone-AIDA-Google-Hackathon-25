@@ -4,7 +4,6 @@ version = "0.1"
 description = "AI-driven agent designed to facilitate the exploration of the academic landscape"
 authors = [{ name = "Antonio Gulli", email = "gulli@google.com" }]
 license = "Apache License 2.0"
-readme = "README.md"
 
 [tool.poetry]
 packages = [
@@ -26,6 +25,9 @@ elasticsearch = "^9.1.0"
 tqdm = "^4.67.1"
 langchain-google-vertexai = "^2.0.28"
 # configs = { path = "./configs", develop = true }
+streamlit = "^1.49.1"
+google-cloud-bigquery = "^3.37.0"
+google-cloud-storage = "2.18.0"
 
 [tool.poetry.group.dev]
 optional = true
