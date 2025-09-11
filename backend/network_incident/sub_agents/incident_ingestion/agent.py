@@ -12,15 +12,36 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
+import logging
+import pandas as pd
+from typing import Tuple, Union
 from google.adk.tools import FunctionTool
 from google.adk.agents import LlmAgent
 from google.adk.tools.agent_tool import AgentTool
-from .ingestion import update_incidents_table, convert_data_to_json, generate_and_add_embeddings, ingest_data_into_elasticsearch_index
-from .file_handler import handle_file_upload, validate_dataframe
-from . import prompt
-import pandas as pd
-import logging 
+
+# Import your custom modules
+try:
+    from backend.network_incident.sub_agents.incident_ingestion.ingestion import (
+        update_incidents_table, 
+        convert_data_to_json, 
+        generate_and_add_embeddings, 
+        ingest_data_into_elasticsearch_index
+    )
+    from backend.network_incident.sub_agents.incident_ingestion.file_handler import (
+        handle_file_upload, 
+        validate_dataframe
+    )
+    from backend.network_incident.sub_agents.incident_ingestion import prompt
+except ImportError as e:
+    logging.error(f"Failed to import required modules: {e}")
+    raise
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 MODEL = "gemini-2.5-pro"
 
@@ -34,28 +55,53 @@ def ingest_incident_data(df: pd.DataFrame) -> str:
         
     Returns:
         str: Detailed status message with counts.
+        
+    Raises:
+        ValueError: If DataFrame is invalid or empty
+        RuntimeError: If ingestion process fails
     """
+    if df is None or df.empty:
+        raise ValueError("DataFrame cannot be None or empty")
+    
     try:
-        logging.info("Starting ingestion process...")
+        logger.info("Starting ingestion process...")
         
         # Validate the DataFrame
         if not validate_dataframe(df):
-            return "Error: Invalid data format. Please ensure the file contains all required columns and valid data."
+            error_msg = "Invalid data format. Please ensure the file contains all required columns and valid data."
+            logger.error(error_msg)
+            return f"❌ Error: {error_msg}"
         
         total_records = len(df)
-        logging.info(f"Processing {total_records} incident records...")
+        logger.info(f"Processing {total_records} incident records...")
         
         # Step 1: Convert and enrich data
-        json_data = convert_data_to_json(df)
+        try:
+            json_data = convert_data_to_json(df)
+        except Exception as e:
+            logger.error(f"Failed to convert data to JSON: {e}")
+            return f"❌ Data conversion failed: {str(e)}"
 
         # Step 2: Update BigQuery and get counts
-        new_count, updated_count = update_incidents_table(json_data)
+        try:
+            new_count, updated_count = update_incidents_table(json_data)
+        except Exception as e:
+            logger.error(f"Failed to update BigQuery: {e}")
+            return f"❌ BigQuery update failed: {str(e)}"
 
         # Step 3: Generate embeddings
-        enriched_data = generate_and_add_embeddings(json_data)
+        try:
+            enriched_data = generate_and_add_embeddings(json_data)
+        except Exception as e:
+            logger.error(f"Failed to generate embeddings: {e}")
+            return f"❌ Embedding generation failed: {str(e)}"
 
         # Step 4: Index into Elasticsearch
-        es_success, es_failed = ingest_data_into_elasticsearch_index(enriched_data)
+        try:
+            es_success, es_failed = ingest_data_into_elasticsearch_index(enriched_data)
+        except Exception as e:
+            logger.error(f"Failed to index into Elasticsearch: {e}")
+            return f"❌ Elasticsearch indexing failed: {str(e)}"
 
         # Prepare detailed status message
         status_message = (
@@ -72,49 +118,97 @@ def ingest_incident_data(df: pd.DataFrame) -> str:
             f"✨ All data has been successfully ingested and is now available for search and resolution suggestions."
         )
 
-        logging.info(f"Ingestion completed: {new_count} new, {updated_count} updated, {es_success} indexed")
+        logger.info(f"Ingestion completed: {new_count} new, {updated_count} updated, {es_success} indexed")
         return status_message
 
     except Exception as e:
-        logging.error(f"Ingestion failed: {e}")
-        return f"❌ Ingestion failed: {str(e)}"
+        logger.error(f"Unexpected error during ingestion: {e}")
+        return f"❌ Unexpected ingestion error: {str(e)}"
 
-def process_uploaded_file(file_content: bytes, filename: str) -> str:
+
+def process_uploaded_file(file_content: Union[bytes, str], filename: str) -> str:
     """
     Process uploaded incident data files (CSV/Excel) and ingests them into the system.
     
     Args:
-        file_content (bytes): The uploaded file content.
+        file_content (Union[bytes, str]): The uploaded file content.
         filename (str): The name of the uploaded file.
         
     Returns:
         str: Status message.
+        
+    Raises:
+        ValueError: If file content or filename is invalid
+        RuntimeError: If file processing fails
     """
+    if not filename or not file_content:
+        raise ValueError("Both file_content and filename must be provided")
+    
     try:
-        logging.info(f"Processing uploaded file: {filename}")
+        logger.info(f"Processing uploaded file: {filename}")
         
         # Handle file upload and convert to DataFrame
-        df = handle_file_upload(file_content, filename)
+        try:
+            df = handle_file_upload(file_content, filename)
+        except Exception as e:
+            logger.error(f"Failed to handle file upload: {e}")
+            return f"❌ File upload handling failed: {str(e)}"
+        
+        # Validate DataFrame was created successfully
+        if df is None or df.empty:
+            error_msg = f"No data found in file {filename} or file could not be processed"
+            logger.error(error_msg)
+            return f"❌ {error_msg}"
         
         # Use the existing ingestion function
         result = ingest_incident_data(df)
-        
         return result
         
     except Exception as e:
-        logging.error(f"File processing failed: {e}")
-        return f"File processing failed: {e}"
+        logger.error(f"Unexpected error processing file {filename}: {e}")
+        return f"❌ File processing failed: {str(e)}"
+
+
+# Validation function for tool creation
+def validate_tools():
+    """Validate that all required functions are available"""
+    required_functions = [
+        update_incidents_table,
+        convert_data_to_json,
+        generate_and_add_embeddings,
+        ingest_data_into_elasticsearch_index,
+        handle_file_upload,
+        validate_dataframe
+    ]
+    
+    for func in required_functions:
+        if not callable(func):
+            raise RuntimeError(f"Required function {func.__name__} is not callable")
+
 
 # Create the tool instances using the functions directly
-ingest_tool = FunctionTool(ingest_incident_data)
-file_upload_tool = FunctionTool(process_uploaded_file)
+try:
+    validate_tools()
+    ingest_tool = FunctionTool(ingest_incident_data)
+    file_upload_tool = FunctionTool(process_uploaded_file)
+    logger.info("Tools created successfully")
+except Exception as e:
+    logger.error(f"Failed to create tools: {e}")
+    raise
+
+
+# Validate that prompt module has the required attribute
+if not hasattr(prompt, 'INCIDENT_INGESTION_PROMPT'):
+    raise AttributeError("prompt module must have INCIDENT_INGESTION_PROMPT attribute")
+
 
 incident_ingestion_agent = LlmAgent(
     name="incident_ingestion_agent",
     model=MODEL,
     description=(
         "This agent reads structured network incident logs from an Excel or CSV file, generates embeddings for each incident description, "
-        "and stores them in a vector database along with relevant metadata. It is used to build a searchable knowledge base of past incidents."
+        "and stores them in a vector database along with relevant metadata. It is used to build a searchable knowledge base of past incidents. "
+        "The agent can process both direct DataFrame input and uploaded files (CSV/Excel format)."
     ),
     instruction=prompt.INCIDENT_INGESTION_PROMPT,
     tools=[ingest_tool, file_upload_tool],

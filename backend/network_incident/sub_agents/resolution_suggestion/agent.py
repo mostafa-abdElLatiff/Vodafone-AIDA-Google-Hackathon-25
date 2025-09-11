@@ -15,8 +15,8 @@
 """Resolution suggestion agent for network incident resolution."""
 
 from google.adk.agents import LlmAgent
-from . import prompt
-from .retrieval_tool import incident_retrieval_tool
+from backend.network_incident.sub_agents.resolution_suggestion import prompt
+from backend.network_incident.sub_agents.resolution_suggestion.retrieval_tool import incident_retrieval_tool
 
 MODEL = "gemini-2.5-pro"
 

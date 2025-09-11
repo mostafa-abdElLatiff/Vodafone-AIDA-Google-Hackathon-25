@@ -26,19 +26,8 @@ def rag_backend(agent_client,
                 uploaded_data: str = None
                ):
     """Send the query to the agent client and get the response"""
-    number_of_qa_to_preserve = (5 * 2) + 1
-    if len(messages) > number_of_qa_to_preserve:
-        messages = messages[-number_of_qa_to_preserve:]
     
-    try:
-        print("Query is:", query)
-        response = agent_client.predict(query, uploaded_data)
-        
-        return response['answer'], response['reference']
-    
-    except Exception as e:
-        error_msg = f"Error processing query: {str(e)}"
-        return error_msg, 'Processing Error'
+    return agent_client.predict(query, file_content=uploaded_file, filename=filename)
 
 
 def main():
