@@ -14,9 +14,9 @@
 
 """Deployment script for Network Incident Resolution Agent"""
 
-
 import os
 import sys
+from pathlib import Path
 
 # Add the current directory to Python path so we can import from backend and configs
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -41,16 +41,29 @@ flags.DEFINE_bool("create", False, "Creates a new agent.")
 flags.DEFINE_bool("delete", False, "Deletes an existing agent.")
 flags.mark_bool_flags_as_mutual_exclusive(["create", "delete"])
 
-
 def create() -> None:
     """Creates an agent engine for Network Incident Resolution."""
     adk_app = AdkApp(agent=root_agent, enable_tracing=True)
 
+    # Use pathlib to get the absolute path to the project root
+    current_dir = Path(__file__).parent
+    project_root = current_dir.parent
+
+    # Construct absolute paths to the 'backend' and 'configs' directories
+    backend_path = project_root / "backend"
+    configs_path = project_root / "configs"
+
+    # Verify that the paths exist before passing them
+    if not backend_path.is_dir():
+        raise FileNotFoundError(f"Backend directory not found at: {backend_path}")
+    if not configs_path.is_dir():
+        raise FileNotFoundError(f"Configs directory not found at: {configs_path}")
+    
     remote_agent = agent_engines.create(
         adk_app,
         display_name=root_agent.name,
         requirements=[
-            "google-adk (>=0.0.2)",
+            "google-adk (>=1.0.0)",
             "google-cloud-aiplatform[agent_engines] (>=1.91.0,!=1.92.0)",
             "google-genai (>=1.5.0,<2.0.0)",
             "pydantic (>=2.10.6,<3.0.0)",
@@ -62,20 +75,22 @@ def create() -> None:
             "google-cloud-bigquery (>=3.11.0)",
         ],
         extra_packages=[
-            "backend",
-            "configs"
+            str(backend_path),
+            str(configs_path)
         ],
     )
     print(f"Created remote agent: {remote_agent.resource_name}")
 
 
 def delete(resource_id: str) -> None:
+    """Deletes an existing agent."""
     remote_agent = agent_engines.get(resource_id)
     remote_agent.delete(force=True)
     print(f"Deleted remote agent: {resource_id}")
 
 
 def list_agents() -> None:
+    """Lists all deployed agents."""
     remote_agents = agent_engines.list()
     template = """
 {agent.name} ("{agent.display_name}")
@@ -89,37 +104,20 @@ def list_agents() -> None:
 
 
 def main(argv: list[str]) -> None:
+    """Main entry point for the deployment script."""
     del argv  # unused
     load_dotenv()
 
-    project_id = (
-        FLAGS.project_id
-        if FLAGS.project_id
-        else os.getenv("GOOGLE_CLOUD_PROJECT")
-    )
-    location = (
-        FLAGS.location if FLAGS.location else os.getenv("GOOGLE_CLOUD_LOCATION")
-    )
-    bucket = (
-        FLAGS.bucket
-        if FLAGS.bucket
-        else os.getenv("GOOGLE_CLOUD_STORAGE_BUCKET")
-    )
+    project_id = FLAGS.project_id if FLAGS.project_id else os.getenv("GOOGLE_CLOUD_PROJECT")
+    location = FLAGS.location if FLAGS.location else os.getenv("GOOGLE_CLOUD_LOCATION")
+    bucket = FLAGS.bucket if FLAGS.bucket else os.getenv("GOOGLE_CLOUD_STORAGE_BUCKET")
 
     print(f"PROJECT: {project_id}")
     print(f"LOCATION: {location}")
     print(f"BUCKET: {bucket}")
 
-    if not project_id:
-        print("Missing required environment variable: GOOGLE_CLOUD_PROJECT")
-        return
-    elif not location:
-        print("Missing required environment variable: GOOGLE_CLOUD_LOCATION")
-        return
-    elif not bucket:
-        print(
-            "Missing required environment variable: GOOGLE_CLOUD_STORAGE_BUCKET"
-        )
+    if not project_id or not location or not bucket:
+        print("Missing required information. Please provide project_id, location, and bucket.")
         return
 
     vertexai.init(
