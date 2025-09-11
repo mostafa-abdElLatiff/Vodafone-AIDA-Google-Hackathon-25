@@ -22,16 +22,20 @@ This guide will help you deploy the Network Incident Resolution Agent and connec
 
 ## Step 1: Deploy the Agent
 
-### Option A: Using the deployment script
+### Option A: Using the deployment script (Recommended)
 ```bash
-cd backend
 python deploy_agent.py deploy
 ```
 
-### Option B: Manual deployment
+### Option B: Using the quick deploy script
 ```bash
-cd backend
-python deployment/deploy.py --create --project_id=vodaf-aida25lcpm-205 --location=europe-west1 --bucket=your-bucket-name
+./deploy.sh
+```
+
+### Option C: Manual deployment
+```bash
+cd deployment
+python deploy.py --create --project_id=vodaf-aida25lcpm-205 --location=europe-west1 --bucket=aida-hackathon-team-5
 ```
 
 ## Step 2: Get the Agent Endpoint
@@ -120,6 +124,9 @@ The agent is configured with:
 ### Debugging Commands:
 
 ```bash
+# Test deployment setup
+python deploy_agent.py test
+
 # List deployed agents
 python deploy_agent.py list
 

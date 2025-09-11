@@ -15,7 +15,7 @@ fi
 # Set environment variables
 export GOOGLE_CLOUD_PROJECT="vodaf-aida25lcpm-205"
 export GOOGLE_CLOUD_LOCATION="europe-west1"
-export GOOGLE_CLOUD_STORAGE_BUCKET="your-bucket-name"  # Replace with your actual bucket
+export GOOGLE_CLOUD_STORAGE_BUCKET="aida-hackathon-team-5"  # Your actual bucket
 
 echo "📋 Configuration:"
 echo "  Project ID: $GOOGLE_CLOUD_PROJECT"
@@ -25,8 +25,8 @@ echo ""
 
 # Test the deployment first
 echo "🧪 Running pre-deployment tests..."
-cd backend
-python test_deployment_connection.py
+cd deployment
+python test_deployment.py
 
 if [ $? -ne 0 ]; then
     echo "❌ Pre-deployment tests failed. Please fix issues before deploying."
@@ -39,7 +39,7 @@ echo ""
 
 # Deploy the agent
 echo "🚀 Deploying the agent..."
-python deploy_agent.py deploy
+python deploy.py --create --project_id=vodaf-aida25lcpm-205 --location=europe-west1 --bucket=aida-hackathon-team-5
 
 if [ $? -eq 0 ]; then
     echo ""

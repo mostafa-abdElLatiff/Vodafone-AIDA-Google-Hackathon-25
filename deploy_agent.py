@@ -8,12 +8,9 @@ import sys
 import argparse
 from pathlib import Path
 
-# Add the backend directory to the Python path
-backend_dir = Path(__file__).parent
-sys.path.insert(0, str(backend_dir))
-
-from deployment.deploy import main as deploy_main
-from absl import app, flags
+# Add the current directory to the Python path
+current_dir = Path(__file__).parent
+sys.path.insert(0, str(current_dir))
 
 def deploy_network_incident_agent():
     """Deploy the Network Incident Resolution Agent"""
@@ -21,17 +18,22 @@ def deploy_network_incident_agent():
     print("🚀 Deploying Network Incident Resolution Agent...")
     print("=" * 60)
     
+    # Change to deployment directory
+    deployment_dir = current_dir / "deployment"
+    os.chdir(deployment_dir)
+    
     # Set up command line arguments
     sys.argv = [
         'deploy_agent.py',
         '--create',
         '--project_id=vodaf-aida25lcpm-205',
         '--location=europe-west1',
-        '--bucket=your-bucket-name'  # Replace with your actual bucket name
+        '--bucket=aida-hackathon-team-5'
     ]
     
     try:
-        # Run the deployment
+        # Import and run the deployment
+        from deploy import main as deploy_main
         deploy_main(sys.argv)
         print("\n✅ Agent deployment completed successfully!")
         print("\nNext steps:")
@@ -52,6 +54,10 @@ def list_deployed_agents():
     print("📋 Listing deployed agents...")
     print("=" * 40)
     
+    # Change to deployment directory
+    deployment_dir = current_dir / "deployment"
+    os.chdir(deployment_dir)
+    
     sys.argv = [
         'deploy_agent.py',
         '--list',
@@ -60,6 +66,7 @@ def list_deployed_agents():
     ]
     
     try:
+        from deploy import main as deploy_main
         deploy_main(sys.argv)
     except Exception as e:
         print(f"❌ Failed to list agents: {e}")
@@ -68,6 +75,10 @@ def delete_agent(resource_id: str):
     """Delete a deployed agent"""
     print(f"🗑️ Deleting agent: {resource_id}")
     print("=" * 40)
+    
+    # Change to deployment directory
+    deployment_dir = current_dir / "deployment"
+    os.chdir(deployment_dir)
     
     sys.argv = [
         'deploy_agent.py',
@@ -78,15 +89,31 @@ def delete_agent(resource_id: str):
     ]
     
     try:
+        from deploy import main as deploy_main
         deploy_main(sys.argv)
         print("✅ Agent deleted successfully!")
     except Exception as e:
         print(f"❌ Failed to delete agent: {e}")
 
+def test_deployment():
+    """Test the deployment setup"""
+    print("🧪 Testing deployment setup...")
+    print("=" * 40)
+    
+    # Change to deployment directory
+    deployment_dir = current_dir / "deployment"
+    os.chdir(deployment_dir)
+    
+    try:
+        from test_deployment import main as test_main
+        test_main()
+    except Exception as e:
+        print(f"❌ Test failed: {e}")
+
 def main():
     """Main function"""
     parser = argparse.ArgumentParser(description='Deploy Network Incident Resolution Agent')
-    parser.add_argument('action', choices=['deploy', 'list', 'delete'], 
+    parser.add_argument('action', choices=['deploy', 'list', 'delete', 'test'], 
                        help='Action to perform')
     parser.add_argument('--resource-id', help='Resource ID for delete action')
     
@@ -101,6 +128,8 @@ def main():
             print("❌ Resource ID is required for delete action")
             return
         delete_agent(args.resource_id)
+    elif args.action == 'test':
+        test_deployment()
 
 if __name__ == "__main__":
     main()

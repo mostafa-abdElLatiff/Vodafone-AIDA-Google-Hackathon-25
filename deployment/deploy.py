@@ -16,10 +16,16 @@
 
 
 import os
+import sys
+
+# Add the current directory to Python path so we can import from backend and configs
+current_dir = os.path.dirname(os.path.abspath(__file__))
+parent_dir = os.path.dirname(current_dir)
+sys.path.insert(0, parent_dir)
 
 import vertexai
 from absl import app, flags
-from network_incident.agent import root_agent
+from backend.network_incident.agent import root_agent
 from dotenv import load_dotenv
 from vertexai import agent_engines
 from vertexai.preview.reasoning_engines import AdkApp
@@ -56,8 +62,8 @@ def create() -> None:
             "google-cloud-bigquery (>=3.11.0)",
         ],
         extra_packages=[
-            "configs",
-            "backend"
+            "backend",
+            "configs"
         ],
     )
     print(f"Created remote agent: {remote_agent.resource_name}")
