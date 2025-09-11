@@ -18,9 +18,9 @@ def deploy_network_incident_agent():
     print("🚀 Deploying Network Incident Resolution Agent...")
     print("=" * 60)
     
-    # Change to deployment directory
+    # Add deployment directory to Python path
     deployment_dir = current_dir / "deployment"
-    os.chdir(deployment_dir)
+    sys.path.insert(0, str(deployment_dir))
     
     # Set up command line arguments
     sys.argv = [
@@ -54,9 +54,9 @@ def list_deployed_agents():
     print("📋 Listing deployed agents...")
     print("=" * 40)
     
-    # Change to deployment directory
+    # Add deployment directory to Python path
     deployment_dir = current_dir / "deployment"
-    os.chdir(deployment_dir)
+    sys.path.insert(0, str(deployment_dir))
     
     sys.argv = [
         'deploy_agent.py',
@@ -76,9 +76,9 @@ def delete_agent(resource_id: str):
     print(f"🗑️ Deleting agent: {resource_id}")
     print("=" * 40)
     
-    # Change to deployment directory
+    # Add deployment directory to Python path
     deployment_dir = current_dir / "deployment"
-    os.chdir(deployment_dir)
+    sys.path.insert(0, str(deployment_dir))
     
     sys.argv = [
         'deploy_agent.py',
@@ -100,12 +100,12 @@ def test_deployment():
     print("🧪 Testing deployment setup...")
     print("=" * 40)
     
-    # Change to deployment directory
+    # Add deployment directory to Python path
     deployment_dir = current_dir / "deployment"
-    os.chdir(deployment_dir)
+    sys.path.insert(0, str(deployment_dir))
     
     try:
-        from test_deployment import main as test_main
+        from simple_test import main as test_main
         test_main()
     except Exception as e:
         print(f"❌ Test failed: {e}")

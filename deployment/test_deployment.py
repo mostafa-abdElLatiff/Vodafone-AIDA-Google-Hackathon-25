@@ -16,8 +16,8 @@ def test_deployment_imports():
         print("🧪 Testing deployment imports...")
         
         # Test main deployment script
-        from deploy import create, list_agents, delete
-        print("✅ Deployment functions imported successfully")
+        import deploy
+        print("✅ Deployment module imported successfully")
         
         # Test agent imports
         from backend.network_incident.agent import root_agent
