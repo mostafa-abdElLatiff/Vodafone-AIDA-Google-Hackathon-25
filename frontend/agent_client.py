@@ -182,7 +182,7 @@ class LocalAgentClient:
             return {
                 "answer": f"Error processing query: {str(e)}",
                 "reference": "Processing Error" 
-            }
+            }   
 
     def ingest_data(self, file_content: bytes, filename: str) -> Dict[str, Any]:
         """
