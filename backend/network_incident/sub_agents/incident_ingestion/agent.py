@@ -22,22 +22,39 @@ from . import prompt
 import pandas as pd
 import logging 
 
-MODEL = "gemini-2.5-pro"
+from google.adk.tools import FunctionTool, ToolContext
+from google.adk.runners import Runner
+from google.adk.sessions import InMemorySessionService
+from google.adk.artifacts import InMemoryArtifactService  # swap for GCS (see note below)
+ 
+from google.genai import types
+
+MODEL = "gemini-2.5-flash"
 
 
-def ingest_incident_data(df: pd.DataFrame) -> str:
+def ingest_incident_data(file_content: bytes, filename: str, tool_context: ToolContext) -> str:
     """
     Transforms incident data, updates BigQuery, generates embeddings, and indexes into Elasticsearch.
     
     Args:
-        df (pd.DataFrame): The incident data DataFrame.
+        file_content (bytes): The uploaded file content.
+        filename (str): The name of the uploaded file.
         
     Returns:
         str: Detailed status message with counts.
     """
     try:
         logging.info("Starting ingestion process...")
+
+        # # 1) Save as an Artifact for this session (versioned)
+        mime, _ = mimetypes.guess_type(filename)
+        mime = mime or "application/octet-stream"
+     
+        artifact_part = types.Part.from_bytes(data=file_content, mime_type=mime)
+        version = tool_context.save_artifact(filename=filename, artifact=artifact_part)  # ADK injects ToolContext
         
+        df = handle_file_upload(file_content, filename)
+   
         # Validate the DataFrame
         if not validate_dataframe(df):
             return "Error: Invalid data format. Please ensure the file contains all required columns and valid data."
@@ -79,35 +96,35 @@ def ingest_incident_data(df: pd.DataFrame) -> str:
         logging.error(f"Ingestion failed: {e}")
         return f"❌ Ingestion failed: {str(e)}"
 
-def process_uploaded_file(file_content: bytes, filename: str) -> str:
-    """
-    Process uploaded incident data files (CSV/Excel) and ingests them into the system.
+# def process_uploaded_file(file_content: bytes, filename: str) -> str:
+#     """
+#     Process uploaded incident data files (CSV/Excel) and ingests them into the system.
     
-    Args:
-        file_content (bytes): The uploaded file content.
-        filename (str): The name of the uploaded file.
+#     Args:
+#         file_content (bytes): The uploaded file content.
+#         filename (str): The name of the uploaded file.
         
-    Returns:
-        str: Status message.
-    """
-    try:
-        logging.info(f"Processing uploaded file: {filename}")
+#     Returns:
+#         str: Status message.
+#     """
+#     try:
+#         logging.info(f"Processing uploaded file: {filename}")
         
-        # Handle file upload and convert to DataFrame
-        df = handle_file_upload(file_content, filename)
+#         # Handle file upload and convert to DataFrame
+#         df = handle_file_upload(file_content, filename)
         
-        # Use the existing ingestion function
-        result = ingest_incident_data(df)
+#         # Use the existing ingestion function
+#         result = ingest_incident_data(df)
         
-        return result
+#         return result
         
-    except Exception as e:
-        logging.error(f"File processing failed: {e}")
-        return f"File processing failed: {e}"
+#     except Exception as e:
+#         logging.error(f"File processing failed: {e}")
+#         return f"File processing failed: {e}"
 
 # Create the tool instances using the functions directly
 ingest_tool = FunctionTool(ingest_incident_data)
-file_upload_tool = FunctionTool(process_uploaded_file)
+# file_upload_tool = FunctionTool(process_uploaded_file)
 
 incident_ingestion_agent = LlmAgent(
     name="incident_ingestion_agent",
@@ -117,6 +134,6 @@ incident_ingestion_agent = LlmAgent(
         "and stores them in a vector database along with relevant metadata. It is used to build a searchable knowledge base of past incidents."
     ),
     instruction=prompt.INCIDENT_INGESTION_PROMPT,
-    tools=[ingest_tool, file_upload_tool],
+    tools=[ingest_tool],
     output_key="ingestion_status"
 )

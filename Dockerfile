@@ -18,6 +18,8 @@ RUN poetry install --no-root --without dev
 
 COPY . .
 
-EXPOSE 8501
+EXPOSE 8000
 
-CMD ["poetry", "run", "streamlit", "run", "frontend/app.py", "--server.port=8501", "--server.address=0.0.0.0"]
+CMD cd /app/backend/
+
+CMD poetry run env GOOGLE_GENAI_USE_VERTEXAI=1 GOOGLE_CLOUD_PROJECT=vodaf-aida25lcpm-205 GOOGLE_CLOUD_LOCATION=europe-west1 adk web

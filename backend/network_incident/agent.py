@@ -18,22 +18,38 @@ from google.adk.agents import LlmAgent
 from google.adk.tools.agent_tool import AgentTool
 
 from . import prompt
-from .sub_agents.incident_ingestion import incident_ingestion_agent
+# from .sub_agents.incident_ingestion import incident_ingestion_agent
 from .sub_agents.resolution_suggestion import resolution_suggestion_agent
+from .sub_agents.uploader import uploader_agent
 
-MODEL = "gemini-2.5-pro"
+MODEL = "gemini-2.5-flash"
 
 
 network_incident = LlmAgent(
     name="network_incident",
     model=MODEL,
     description=(
-            "This Router Agent acts as a controller that dynamically selects the appropriate downstream agent based on input context. If the input is a structured dataset (e.g., Excel file), it invokes the Incident Ingestion Agent to process and index incidents. If the input is a natural language query from an engineer, it invokes the Resolution Suggestion Agent to retrieve similar incidents and generate resolution insights."
+            """
+You are a Network Incident Router Agent that directs user requests to the right specialist agent.
+Your job is simple:
+
+Agent 1: If a user asks questions about network problems, troubleshooting, or incident resolution → route to the Network Resolution Agent. 
+This agent can handle filtering and counting because it has advanced search capabilities. Just pass it the user query.
+
+Agent 2: If a user asks to upload a file → route to Uploader Agent
+Keep responses direct and helpful:
+
+Don't generate code or technical implementations
+Don't over-explain the routing process
+Simply execute the appropriate agent and return their response
+If both file upload and question are present, handle the file first, then answer the question
+"""
     ),
     instruction=prompt.ROUTER_AGENT_PROMPT,
     tools=[
-    AgentTool(agent=incident_ingestion_agent),
+    AgentTool(agent=uploader_agent),
     AgentTool(agent=resolution_suggestion_agent),
+    
 ]
 
 )

@@ -12,35 +12,51 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Academic_websearch_agent for finding research papers using search tools."""
+"""Resolution suggestion agent for network incident resolution."""
 
-from google.adk import Agent
-from google.adk.tools import google_search
 from google.adk.agents import LlmAgent
-from google.adk.tools.agent_tool import AgentTool
 from . import prompt
+from .retrieval_tool import incident_retrieval_tool
+# from configs.config import RAG_PROMOT
 
-MODEL = "gemini-2.5-pro"
+# # Define the new instruction to directly call the tool
+# DIRECT_TOOL_CALL_PROMPT = """
+# You are a tool-calling assistant.
+# You must use the 'incident_retrieval_tool' to retrieve historical incident data based on the user's query.
+# Do not reason or generate a summary. Simply call the tool with the user's query as the argument.
+# The user's query is: {{user_query}}
+# """
 
-
-# academic_websearch_agent = Agent(
-#     model=MODEL,
-#     name="academic_websearch_agent",
-#     instruction=prompt.ACADEMIC_WEBSEARCH_PROMPT,
-#     output_key="recent_citing_papers",
-#     tools=[google_search],
-# )
-# from adk import LlmAgent, AgentTool
-# import prompt  # assuming prompt.py is in the same directory
+MODEL = "gemini-2.5-flash"
 
 resolution_suggestion_agent = LlmAgent(
     name="resolution_suggestion_agent",
     model=MODEL,
     description=(
-        "This agent accepts a natural language query from a network engineer describing a current issue. "
-        "It searches the vector database for similar past incidents, summarizes historical resolutions and probable root causes, "
-        "and suggests recommended resolution steps."
+"""
+You are a Network Incident Assistant. Your goal is to help engineers quickly understand and resolve network issues.
+Your search tool is very powerful because can handle filtering and counting because it has advanced search capabilities. Just pass it the user query.
+
+### What you do:
+1. Read the incident description provided by the engineer.
+2. Ask for missing key details if needed (severity, impacted location, affected services).
+3. Use the vector search tool to find similar past incidents, their root causes, and resolution steps.
+4. Summarize findings and suggest possible root causes and recommended actions.
+ 
+### Response format:
+- **Summary:** Short description of the issue.
+- **Clarifying Questions (if needed):** Up to 3 questions to get severity, location, or scope.
+- **Possible Root Causes:** Ranked list based on retrieved incidents.
+- **Suggested Resolution Steps:** Practical, safe actions based on historical fixes.
+- **Confidence Level:** Low / Medium / High.
+ 
+### Rules:
+- Be clear and concise.
+- Do not guess if unsure; say what info is missing.
+- Always base suggestions on retrieved evidence.
+"""
     ),
     instruction=prompt.RESOLUTION_SUGGESTION_PROMPT,
+    tools=[incident_retrieval_tool],
     output_key="resolution_summary"
 )

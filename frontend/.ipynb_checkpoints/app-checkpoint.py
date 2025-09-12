@@ -1,8 +1,18 @@
 import base64
 import streamlit as st
 import pandas as pd
+import uuid
 from typing import List, Dict
 from agent_client import LocalAgentClient
+
+# Use a singleton pattern to ensure the client is only created once
+@st.cache_resource
+def get_agent_client():
+    """
+    Initializes and returns a single instance of the LocalAgentClient.
+    This function will only run once.
+    """
+    return LocalAgentClient()
 
 
 def get_base64(bin_file):
@@ -20,27 +30,38 @@ def add_message(role, content, message_type):
 
 
 def rag_backend(agent_client,
+                user_id: str,
+                session_id: str,
                 query: str,
                 messages: List,
                 counter: int,
                 uploaded_data: str = None
                ):
     """Send the query to the agent client and get the response"""
-    number_of_qa_to_preserve = (5 * 2) + 1
-    if len(messages) > number_of_qa_to_preserve:
-        messages = messages[-number_of_qa_to_preserve:]
     
-    try:
-        print("Query is:", query)
-        response = agent_client.predict(query, uploaded_data)
+    if uploaded_data:
+        # Read file as bytes
+        file_bytes = uploaded_file.read()
+        filename = uploaded_file.name
         
-        return response['answer'], response['reference']
-    
-    except Exception as e:
-        error_msg = f"Error processing query: {str(e)}"
-        return error_msg, 'Processing Error'
+        # Make sure both are passed
+        response = agent_client.predict(
+            query=query,
+            user_id=user_id, # Pass the stored user ID
+            session_id=session_id, # Pass the stored session ID
+            file_content=file_bytes,  # This should be bytes, not None
+            filename=filename         # This should be string, not None
+        )
+    else:
+        # No file uploaded
+        response = agent_client.predict(
+            query=query,
+            user_id=user_id, # Pass the stored user ID
+            session_id=session_id # Pass the stored session ID
+        )
 
-
+    return response
+        
 def main():
 
     # Load favicon file (app logo image)
@@ -65,8 +86,11 @@ def main():
     st.info(description, icon=":material/description:")
         
     # Create an instance of the AgentClient for each session
-    if "agent_client" not in st.session_state:
-        st.session_state.agent_client = LocalAgentClient()
+    # if "agent_client" not in st.session_state:
+    #     st.session_state.agent_client = LocalAgentClient()
+
+    # Get the client instance
+    agent_client = get_agent_client()
         
     # Initialize chat history if not already present
     if "messages" not in st.session_state:
@@ -78,6 +102,13 @@ def main():
     # Initialize a counter for the user queries
     if "counter" not in st.session_state:
         st.session_state.counter = 0
+
+    # 1. Initialize user_id and session_id in st.session_state
+    if 'user_id' not in st.session_state:
+        st.session_state.user_id = str(uuid.uuid4()) # Generate a unique ID for the user
+    if 'session_id' not in st.session_state:
+        st.session_state.session_id = str(uuid.uuid4()) # Generate a unique ID for the conversation
+
 
     # Display existing chat history
     for message in st.session_state.styled_messages:
@@ -131,9 +162,9 @@ def main():
         
         # Generate AI response
         uploaded_data = st.session_state.get('uploaded_data', None)
-        response = rag_backend(st.session_state.agent_client, prompt, st.session_state.messages, st.session_state.counter, uploaded_data)
-        answer = response[0]
-        reference = response[1] 
+        response = rag_backend(agent_client, st.session_state.user_id, st.session_state.session_id, prompt, st.session_state.messages, st.session_state.counter, uploaded_data)
+        answer = response['answer']
+        # reference = response[1] 
 
         # Display ai response
         with st.chat_message('assistant'):
